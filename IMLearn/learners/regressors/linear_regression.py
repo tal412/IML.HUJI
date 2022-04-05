@@ -7,6 +7,10 @@ import IMLearn.metrics.loss_functions as lf
 
 
 class LinearRegression(BaseEstimator):
+    @staticmethod
+    def add_intercept(matrix):
+        return np.append(np.array([[1] for _ in range(len(matrix))]), matrix, axis=1)
+
     """
     Linear Regression Estimator
 
@@ -51,12 +55,10 @@ class LinearRegression(BaseEstimator):
         Fits model with or without an intercept depending on value of `self.include_intercept_`
         """
         if self.include_intercept_:
-            new_column = [1] * len(X)
-            X = np.insert(X, 1, new_column, axis=0)
+            X = LinearRegression.add_intercept(X)
 
         x_dagger = np.linalg.pinv(X)
         self.coefs_ = x_dagger @ y
-
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -72,6 +74,9 @@ class LinearRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
+        if self.include_intercept_:
+            X = LinearRegression.add_intercept(X)
+
         return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
@@ -92,5 +97,4 @@ class LinearRegression(BaseEstimator):
             Performance under MSE loss function
         """
 
-        return lf.mean_square_error(X @ self.coefs_, y)
-
+        return lf.mean_square_error(y, self.predict(X))

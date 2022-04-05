@@ -33,13 +33,16 @@ def split_train_test(X: pd.DataFrame, y: pd.Series, train_proportion: float = .7
         Responses of test samples
 
     """
-    train_x = X.sample(frac=1-train_proportion, random_state=200)  # random state is a seed value
-    test_x = X.drop(train_x.index)
+    X = X.sample(frac=1)
+    y = y.reindex_like(X)
+    num = round(train_proportion*len(y))
 
-    train_y = y.sample(frac=1-train_proportion, random_state=200)  # random state is a seed value
-    test_y = y.drop(train_y.index)
+    train_x = X[:num]
+    train_y = y[:num]
+    test_x = X[num:]
+    test_y = y[num:]
 
-    return train_x, test_x, train_y, test_y
+    return train_x, train_y, test_x, test_y
 
 
 def confusion_matrix(a: np.ndarray, b: np.ndarray) -> np.ndarray:

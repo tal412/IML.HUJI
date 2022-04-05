@@ -17,10 +17,12 @@ def mean_square_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     MSE of given predictions
     """
     loss = 0
-    for i, pred in enumerate(y_pred):
-        loss += (y_true[i] + pred)**2
 
-    return loss / len(y_true)
+    my_len = len(y_true)
+    for i in range(my_len):
+        loss += (y_true[i] - y_pred[i])**2
+
+    return loss / my_len
 
 
 def misclassification_error(y_true: np.ndarray, y_pred: np.ndarray, normalize: bool = True) -> float:

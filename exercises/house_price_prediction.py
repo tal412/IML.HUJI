@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import plotly.io as pio
 
+pio.renderers.default = 'browser'
 pio.templates.default = "simple_white"
 
 
@@ -93,7 +94,7 @@ def load_data(filename: str):
     data_frame = filter_by_range(data_frame)
     data_frame = make_indicators(data_frame)
 
-    data_frame.insert(0, 'intercept', 1, True)
+    #data_frame.insert(0, 'intercept', 1, True)
 
     price_vector = data_frame.pop('price')
     return data_frame, price_vector
@@ -158,13 +159,14 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
 if __name__ == '__main__':
     np.random.seed(0)
     # Question 1 - Load and preprocessing of housing prices dataset
-    features, prices = load_data("../datasets/house_prices.csv")
+    features, labels = load_data("../datasets/house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
-    feature_evaluation(features, prices, './ex2_plots')
+    # todo RETURN !!!!!!!1!!!!!!!1!!!!!!!1!!!!!!!1!!!!!!!1
+    # feature_evaluation(features, labels, './ex2_plots')
 
     # Question 3 - Split samples into training- and testing sets.
-    # raise NotImplementedError()
+    train_x, train_y, test_x, test_y = split_train_test(features, labels)
 
     # Question 4 - Fit model over increasing percentages of the overall training data
     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
@@ -173,4 +175,60 @@ if __name__ == '__main__':
     #   3) Test fitted model over test set
     #   4) Store average and variance of loss over test set
     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
-    # raise NotImplementedError()
+
+    percentage = []
+    mean_loss_values = []
+    std_loss_values = []
+
+    for p in range(10, 101):
+        percentage.append(p)
+
+        curr_p_loss = []
+        for i in range(10):
+            train_sample = train_x.sample(frac=p / 100)
+            train_label = train_y[train_sample.index]
+
+            lr = LinearRegression(True)
+            lr.fit(train_sample, train_label)
+
+            loss = lr.loss(np.asarray(test_x), np.asarray(test_y))
+            curr_p_loss.append(loss)
+
+        mean_loss_values.append(np.mean(curr_p_loss))
+        std_loss_values.append(np.std(curr_p_loss))
+
+    fig = go.Figure()
+    fig.update_layout(
+        xaxis_title="p%",
+        yaxis_title="Mean loss",
+    )
+
+    fig.add_scatter(
+        name=
+        "Losses mean p%",
+        x=percentage,
+        y=mean_loss_values,
+        mode="markers+lines",
+        marker=dict(color="green", opacity=.7)
+
+    )
+
+    fig.add_scatter(
+        x=percentage,
+        y=np.asarray(mean_loss_values)-2*np.asarray(std_loss_values),
+        fill=None,
+        mode="lines",
+        marker=dict(color="lightgrey",),
+        showlegend=False
+    )
+
+    fig.add_scatter(
+        x=percentage,
+        y=np.asarray(mean_loss_values)+2*np.asarray(std_loss_values),
+        fill="tonexty",
+        mode="lines",
+        marker=dict(color="lightgrey",),
+        showlegend=False
+    )
+
+    fig.show()
