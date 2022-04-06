@@ -94,8 +94,6 @@ def load_data(filename: str):
     data_frame = filter_by_range(data_frame)
     data_frame = make_indicators(data_frame)
 
-    #data_frame.insert(0, 'intercept', 1, True)
-
     price_vector = data_frame.pop('price')
     return data_frame, price_vector
 
@@ -162,8 +160,7 @@ if __name__ == '__main__':
     features, labels = load_data("../datasets/house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
-    # todo RETURN !!!!!!!1!!!!!!!1!!!!!!!1!!!!!!!1!!!!!!!1
-    # feature_evaluation(features, labels, './ex2_plots')
+    feature_evaluation(features, labels, './ex2_plots')
 
     # Question 3 - Split samples into training- and testing sets.
     train_x, train_y, test_x, test_y = split_train_test(features, labels)
