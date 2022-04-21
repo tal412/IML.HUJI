@@ -6,7 +6,12 @@ import numpy as np
 
 
 def default_callback(fit: Perceptron, x: np.ndarray, y: int):
-    pass
+    return fit.loss(x, np.array(y))
+
+
+def add_intercept(matrix):
+    ones = np.ones((matrix.shape[0], 1))
+    return np.hstack((ones, matrix))
 
 
 class Perceptron(BaseEstimator):
@@ -73,7 +78,33 @@ class Perceptron(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.fit_intercept_`
         """
-        raise NotImplementedError()
+        if self.include_intercept_:
+            X = add_intercept(X)
+
+        coefs = np.zeros((1, X.shape[1]))
+
+        j = 0
+        while j < self.max_iter_:
+
+            exists = False
+            for i in range(X.shape[0]):
+                sample = np.reshape(X[i], (1, len(X[i])))
+
+                inner = np.dot(coefs, np.transpose(sample))[0][0]
+                if y[i] * inner <= 0:
+                    coefs += y[i] * sample
+                    self.fitted_ = True
+                    self.coefs_ = coefs
+                    self.callback_(self, X[i], y[i])
+                    exists = True
+                    break
+
+            if not exists:
+                break
+            else:
+                j += 1
+
+        self.coefs_ = coefs
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -89,7 +120,10 @@ class Perceptron(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        if self.include_intercept_:
+            X = add_intercept(X)
+
+        return np.sign(X @ np.transpose(self.coefs_))
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -109,4 +143,6 @@ class Perceptron(BaseEstimator):
             Performance under missclassification loss function
         """
         from ...metrics import misclassification_error
-        raise NotImplementedError()
+        pred = self.predict(X).flatten()
+        return misclassification_error(y, pred)
+

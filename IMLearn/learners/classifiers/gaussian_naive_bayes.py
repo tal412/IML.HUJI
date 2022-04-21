@@ -95,4 +95,6 @@ class GaussianNaiveBayes(BaseEstimator):
             Performance under missclassification loss function
         """
         from ...metrics import misclassification_error
-        raise NotImplementedError()
+        pred = self.predict(X).flatten()
+        return misclassification_error(y, pred)
+
