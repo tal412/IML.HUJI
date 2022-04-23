@@ -99,27 +99,35 @@ def compare_gaussian_classifiers():
         # Fit models and predict over training set
         lda = LDA()
         lda.fit(X, y)
-        pred = lda.predict(X)
+        lda_pred = lda.predict(X)
+
+        naive = GaussianNaiveBayes()
+        naive.fit(X, y)
+        naive_pred = naive.predict(X)
+        from IMLearn.metrics import accuracy
+        lda_acc = accuracy(y, lda_pred)
+        naive_acc = accuracy(y, naive_pred)
         print("")
 
         # Plot a figure with two suplots, showing the Gaussian Naive Bayes predictions on the left and LDA predictions
         # on the right. Plot title should specify dataset used and subplot titles should specify algorithm and accuracy
         # Create subplots
         from IMLearn.metrics import accuracy
-        #raise NotImplementedError()
 
         # Add traces for data-points setting symbols and colors
-        #raise NotImplementedError()
+        # raise NotImplementedError()
 
         # Add `X` dots specifying fitted Gaussians' means
-        #raise NotImplementedError()
+        # raise NotImplementedError()
 
         # Add ellipses depicting the covariances of the fitted Gaussians
-        #raise NotImplementedError()
+        # raise NotImplementedError()
+
+
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    #TODO RETURN!
-    #run_perceptron()
+    # TODO RETURN!
+    # run_perceptron()
     compare_gaussian_classifiers()

@@ -55,7 +55,11 @@ class LDA(BaseEstimator):
         self.mu_ = np.array(self.mu_)
         self.pi_ = np.array([[c / y.shape[0]] for c in counts])
 
-        self.cov_ = np.cov(X, rowvar=False)
+        self.cov_ = np.zeros(shape=(X.shape[1], X.shape[1]))
+        for c in self.classes_:
+            Xg = X[y == c, :]
+            self.cov_ += self.pi_[c] * np.cov(Xg.T, bias=True)
+
         self._cov_inv = np.linalg.inv(self.cov_)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
@@ -74,20 +78,19 @@ class LDA(BaseEstimator):
         """
 
         x_rows = X.shape[0]
-        max_arr = [None] * x_rows
-        pred_arr = np.zeros((x_rows, 1))
+        pred_arr = list()
 
         for i in range(x_rows):
+            arg_arr = list()
             for k in range(len(self.classes_)):
                 a_k = self._cov_inv @ self.mu_[k]
                 b_k = np.log(self.pi_[k]) - 0.5 * self.mu_[k].T @ self._cov_inv @ self.mu_[k]
-                arg = a_k.T @ X[i] + b_k
+                arg_arr.append(a_k.T @ X[i] + b_k)
 
-                if max_arr[i] is None or arg > max_arr[i]:
-                    max_arr[i] = arg
-                    pred_arr[i] = k
+            pred = self.classes_[np.argmax(arg_arr)]
+            pred_arr.append(pred)
 
-        return pred_arr
+        return np.array(pred_arr)
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """
