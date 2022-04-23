@@ -99,31 +99,62 @@ def compare_gaussian_classifiers():
         # Fit models and predict over training set
         lda = LDA()
         lda.fit(X, y)
-        lda_pred = lda.predict(X)
 
         naive = GaussianNaiveBayes()
         naive.fit(X, y)
-        naive_pred = naive.predict(X)
-        from IMLearn.metrics import accuracy
-        lda_acc = accuracy(y, lda_pred)
-        naive_acc = accuracy(y, naive_pred)
-        print("")
 
         # Plot a figure with two suplots, showing the Gaussian Naive Bayes predictions on the left and LDA predictions
         # on the right. Plot title should specify dataset used and subplot titles should specify algorithm and accuracy
         # Create subplots
         from IMLearn.metrics import accuracy
 
+        naive_pred = naive.predict(X)
+        lda_pred = lda.predict(X)
+
+        models = [naive, lda]
+        preds = [naive_pred, lda_pred]
+
+        fig = make_subplots(
+            rows=1, cols=2,
+            subplot_titles=(f"Data from: {f}, Classifier: Naive Bayes, Accuracy: {accuracy(y, naive_pred)}",
+                            f"Data from: {f}, Classifier: LDA, Accuracy: {accuracy(y, lda_pred)}",
+                            ))
+
         # Add traces for data-points setting symbols and colors
-        # raise NotImplementedError()
+        for i, p in enumerate(preds):
+            fig.add_trace(
+                row=1, col=(i+1), trace=go.Scatter(
+                    x=X.T[0],
+                    y=X.T[1],
+                    mode='markers',
+                    marker=go.scatter.Marker(color=naive_pred, symbol=y, size=10),
+                )
+            )
 
         # Add `X` dots specifying fitted Gaussians' means
-        # raise NotImplementedError()
+        for i, m in enumerate(models):
+            for k in lda.classes_:
+                fig.add_trace(
+                    row=1, col=(i+1), trace=go.Scatter(
+                        x=[m.mu_[k][0]],
+                        y=[m.mu_[k][1]],
+                        mode='markers',
+                        marker=go.scatter.Marker(color='crimson', symbol=4, size=20),
+                    )
+                )
 
         # Add ellipses depicting the covariances of the fitted Gaussians
-        # raise NotImplementedError()
+        for i in range(len(lda.classes_)):
+            n = X.shape[1]
+            # Cov matrix for naive
+            cov = np.zeros(shape=(n, n))
+            np.fill_diagonal(cov, naive.vars_[i])
+            fig.add_trace(row=1, col=1, trace=get_ellipse(naive.mu_[i], cov))
 
+            # Cov matrix for LDA
+            fig.add_trace(row=1, col=2, trace=get_ellipse(lda.mu_[i], lda.cov_))
 
+        fig.show()
 
 
 if __name__ == '__main__':
