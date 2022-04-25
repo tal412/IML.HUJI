@@ -65,27 +65,7 @@ class GaussianNaiveBayes(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        x_cols = X.shape[1]
-        cov_array = []
-
-        for k in range(len(self.classes_)):
-            cov_k = np.zeros(shape=(x_cols, x_cols))
-            np.fill_diagonal(cov_k, self.vars_[k])
-            cov_array.append(cov_k)
-
-        preds_list = list()
-        for x in X:
-            args_list = list()
-            for c in self.classes_:
-                inv_cov = np.linalg.inv(cov_array[c])
-                inv_cov_det = np.linalg.det(inv_cov)
-                likelihood = 0.5 * np.log(inv_cov_det) - 0.5 * (x - self.mu_[c]).T @ inv_cov @ (x - self.mu_[c])
-                post = np.log(self.pi_[c]) + likelihood
-                args_list.append(post)
-
-            preds_list.append(self.classes_[np.argmax(args_list)])
-
-        return np.array(preds_list)
+        return np.take(self.classes_, np.argmax(self.likelihood(X), axis=1))
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """
@@ -105,19 +85,24 @@ class GaussianNaiveBayes(BaseEstimator):
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
 
-        def prob(x, c):
-            cov_inv = self._get_inv_cov(X)
-            return \
-                np.log(self.pi_[c]) \
-                + x.T @ cov_inv @ self.mu_[c] \
-                - 0.5 * self.mu_[c].T @ cov_inv @ self.mu_[c]
-
-        x_rows = X.shape[0]
+        x_rows, x_cols = X.shape
         mat = np.ndarray((x_rows, len(self.classes_)))
 
-        for i in range(x_rows):
+        cov_array = []
+        for k in range(len(self.classes_)):
+            cov_k = np.zeros(shape=(x_cols, x_cols))
+            np.fill_diagonal(cov_k, self.vars_[k])
+            cov_array.append(cov_k)
+
+        for i, x in enumerate(X):
             for k in range(len(self.classes_)):
-                mat[i, k] = prob(X[i], k)
+                # Calculating gaussian log-likelihood, same as Ex 1
+                inv_cov = np.linalg.inv(cov_array[k])
+                inv_cov_det = np.linalg.det(inv_cov)
+
+                mat[i, k] =\
+                    0.5 * np.log(inv_cov_det)\
+                    - 0.5 * (x - self.mu_[k]).T @ inv_cov @ (x - self.mu_[k]) + np.log(self.pi_[k])
 
         return mat
 
@@ -141,14 +126,4 @@ class GaussianNaiveBayes(BaseEstimator):
         from ...metrics import misclassification_error
         pred = self.predict(X).flatten()
         return misclassification_error(y, pred)
-
-    def _get_inv_cov(self, X):
-        x_cols = X.shape[1]
-        cov_mat = np.zeros(shape=(x_cols, x_cols))
-
-        for i in range(x_cols):
-            for k in range(len(self.classes_)):
-                cov_mat[i, i] += self.vars_[k, i] * self.pi_[k]
-
-        return np.linalg.inv(cov_mat)
 
