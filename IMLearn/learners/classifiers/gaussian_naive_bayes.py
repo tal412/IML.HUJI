@@ -2,10 +2,12 @@ from typing import NoReturn
 from ...base import BaseEstimator
 import numpy as np
 
+
 class GaussianNaiveBayes(BaseEstimator):
     """
     Gaussian Naive-Bayes classifier
     """
+
     def __init__(self):
         """
         Instantiate a Gaussian Naive Bayes classifier
@@ -98,11 +100,11 @@ class GaussianNaiveBayes(BaseEstimator):
             for k in range(len(self.classes_)):
                 # Calculating gaussian log-likelihood, same as Ex 1
                 cov_inv = np.linalg.inv(cov_array[k])
-                cov_inv_det = np.linalg.det(cov_inv)
 
-                mat[i, k] =\
-                    0.5 * np.log(cov_inv_det) + \
-                    np.log(self.pi_[k]) - 0.5 * (x - self.mu_[k]).T @ cov_inv @ (x - self.mu_[k])
+                mat[i, k] = \
+                    np.log(self.pi_[k]) \
+                    - 0.5 * np.log(2 * np.pi * np.linalg.det(cov_array[k])) + \
+                    - 0.5 * (x - self.mu_[k]).T @ cov_inv @ (x - self.mu_[k])
 
         return mat
 
@@ -126,4 +128,3 @@ class GaussianNaiveBayes(BaseEstimator):
         from ...metrics import misclassification_error
         pred = self.predict(X).flatten()
         return misclassification_error(y, pred)
-
