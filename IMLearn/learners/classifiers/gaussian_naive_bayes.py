@@ -45,7 +45,7 @@ class GaussianNaiveBayes(BaseEstimator):
         self.vars_ = []
         for c in self.classes_:
             self.mu_.append(X[y == c].mean(axis=0))
-            self.vars_.append(X[y == c].var(axis=0))
+            self.vars_.append(X[y == c].var(axis=0, ddof=1))
 
         self.vars_ = np.array(self.vars_)
         self.mu_ = np.array(self.mu_)
