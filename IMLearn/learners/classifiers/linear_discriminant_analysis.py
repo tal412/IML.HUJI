@@ -77,20 +77,7 @@ class LDA(BaseEstimator):
             Predicted responses of given samples
         """
 
-        x_rows = X.shape[0]
-        pred_arr = list()
-
-        for i in range(x_rows):
-            arg_arr = list()
-            for k in range(len(self.classes_)):
-                a_k = self._cov_inv @ self.mu_[k]
-                b_k = np.log(self.pi_[k]) - 0.5 * self.mu_[k].T @ self._cov_inv @ self.mu_[k]
-                arg_arr.append(a_k.T @ X[i] + b_k)
-
-            pred = self.classes_[np.argmax(arg_arr)]
-            pred_arr.append(pred)
-
-        return np.array(pred_arr)
+        return np.take(self.classes_, np.argmax(self.likelihood(X), axis=1))
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """
