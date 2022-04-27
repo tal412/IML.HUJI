@@ -97,12 +97,12 @@ class GaussianNaiveBayes(BaseEstimator):
         for i, x in enumerate(X):
             for k in range(len(self.classes_)):
                 # Calculating gaussian log-likelihood, same as Ex 1
-                inv_cov = np.linalg.inv(cov_array[k])
-                inv_cov_det = np.linalg.det(inv_cov)
+                cov_inv = np.linalg.inv(cov_array[k])
+                cov_inv_det = np.linalg.det(cov_inv)
 
                 mat[i, k] =\
-                    0.5 * np.log(inv_cov_det)\
-                    - 0.5 * (x - self.mu_[k]).T @ inv_cov @ (x - self.mu_[k]) + np.log(self.pi_[k])
+                    0.5 * np.log(cov_inv_det) + \
+                    np.log(self.pi_[k]) - 0.5 * (x - self.mu_[k]).T @ cov_inv @ (x - self.mu_[k])
 
         return mat
 
