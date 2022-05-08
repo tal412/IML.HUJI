@@ -1,11 +1,13 @@
 import numpy as np
 from typing import Tuple
-from IMLearn.learners.metalearners.adaboost import AdaBoost
+from IMLearn.metalearners.adaboost import AdaBoost
 from IMLearn.learners.classifiers import DecisionStump
 from utils import *
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+pio.renderers.default = 'browser'
+pio.templates.default = "simple_white"
 
 def generate_data(n: int, noise_ratio: float) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -42,20 +44,51 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     (train_X, train_y), (test_X, test_y) = generate_data(train_size, noise), generate_data(test_size, noise)
 
     # Question 1: Train- and test errors of AdaBoost in noiseless case
-    raise NotImplementedError()
+    adaBoost = AdaBoost(DecisionStump, n_learners)
+    adaBoost.fit(train_X, train_y)
+
+    training_loss = []
+    test_loss = []
+
+    classifiers_indexes = np.arange(1, n_learners)
+
+    for i in range(n_learners):
+        print(i)
+        training_loss.append(adaBoost.partial_loss(train_X, train_y, i))
+        test_loss.append(adaBoost.partial_loss(test_X, test_y, i))
+
+    qs1_fig = go.Figure()
+
+    qs1_fig.update_layout(
+        title="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+        xaxis_title="Sample size",
+        yaxis_title="Difference from mean"
+    )
+
+    qs1_fig.add_scatter(
+        x=classifiers_indexes,
+        y=training_loss,
+    )
+
+    qs1_fig.add_scatter(
+        x=classifiers_indexes,
+        y=test_loss,
+    )
+
+    qs1_fig.show()
 
     # Question 2: Plotting decision surfaces
     T = [5, 50, 100, 250]
     lims = np.array([np.r_[train_X, test_X].min(axis=0), np.r_[train_X, test_X].max(axis=0)]).T + np.array([-.1, .1])
-    raise NotImplementedError()
+    #raise NotImplementedError()
 
     # Question 3: Decision surface of best performing ensemble
-    raise NotImplementedError()
+    #raise NotImplementedError()
 
     # Question 4: Decision surface with weighted samples
-    raise NotImplementedError()
+    #raise NotImplementedError()
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    raise NotImplementedError()
+    fit_and_evaluate_adaboost(0)

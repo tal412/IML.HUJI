@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import sys
 from typing import Tuple, NoReturn
 from ...base import BaseEstimator
 import numpy as np
@@ -20,6 +22,7 @@ class DecisionStump(BaseEstimator):
     self.sign_: int
         The label to predict for samples where the value of the j'th feature is about the threshold
     """
+
     def __init__(self) -> DecisionStump:
         """
         Instantiate a Decision stump classifier
@@ -39,15 +42,16 @@ class DecisionStump(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        loss_min = 0
+        loss_min = np.inf
+        self.fitted_ = True
 
         for sign, j in product([-1, 1], range(X.shape[1])):
-            loss, threshold = self._find_threshold(X[j], y, sign)
+            threshold, loss = self._find_threshold(X[:, j], y, sign)
             if loss < loss_min:
+                loss_min = loss
                 self.sign_ = sign
                 self.threshold_ = threshold
                 self.j_ = j
-                loss_min = loss
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -71,8 +75,9 @@ class DecisionStump(BaseEstimator):
         Feature values strictly below threshold are predicted as `-sign` whereas values which equal
         to or above the threshold are predicted as `sign`
         """
-        best_feature_col = X[:self.j_]
-        return np.array([self.sign_ if value >= self.threshold_ else -self.sign_ for value in best_feature_col])
+        chosen_feature = X[:, self.j_]
+        pred = self.sign_ * ((chosen_feature >= self.threshold_) * 2 - 1)
+        return pred
 
     def _find_threshold(self, values: np.ndarray, labels: np.ndarray, sign: int) -> Tuple[float, float]:
         """
@@ -104,30 +109,17 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
+
         sort_idx = np.argsort(values)
-        sorted_vals = values[sort_idx]
-        sorted_labels = labels[sort_idx]
+        D = abs(labels)
+        labels = np.sign(labels)
+        sorted_vals, sorted_labels, D = values[sort_idx], labels[sort_idx], D[sort_idx]
 
-        loss_arr = []
-        for threshold in sorted_vals:
-            signs_arr = np.zeros(len(sorted_vals))
-            np.where(sorted_vals >= threshold, signs_arr, -1)
-
-            plus_sign_indexes = [i for i, v in enumerate(signs_arr) if v == sign]
-            minus_sign_indexes = [i for i, v in enumerate(signs_arr) if v == -sign]
-
-            plus_sign_loss =\
-                np.sum(np.take(signs_arr, plus_sign_indexes) != np.take(sorted_labels, plus_sign_indexes))
-
-            minus_sign_loss =\
-                np.sum(np.take(signs_arr, minus_sign_indexes) != np.take(sorted_labels, minus_sign_indexes))
-
-            total_loss = plus_sign_loss + minus_sign_loss
-            loss_arr.append(total_loss)
-
-        min_loss_id = np.argmin(loss_arr)
-        return sorted_vals[min_loss_id], loss_arr[min_loss_id]
-
+        thresholds = np.concatenate([[-np.inf], sorted_vals, [np.inf]])
+        min_threshold_loss = np.sum(D[sorted_labels == sign])
+        losses = np.append(min_threshold_loss, min_threshold_loss - np.cumsum(D * (sorted_labels * sign)))
+        min_loss_idx = np.argmin(losses)
+        return thresholds[min_loss_idx], losses[min_loss_idx]
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
