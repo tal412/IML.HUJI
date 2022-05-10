@@ -114,12 +114,25 @@ class DecisionStump(BaseEstimator):
         D = abs(labels)
         labels = np.sign(labels)
         sorted_vals, sorted_labels, D = values[sort_idx], labels[sort_idx], D[sort_idx]
-
-        thresholds = np.concatenate([[-np.inf], sorted_vals, [np.inf]])
+        thresholds = np.concatenate(
+            [
+                [-np.inf],
+                [(sorted_vals[i]+sorted_vals[i+1])/2 for i in range(len(sorted_vals)-1)],
+                [np.inf]]
+        )
         min_threshold_loss = np.sum(D[sorted_labels == sign])
         losses = np.append(min_threshold_loss, min_threshold_loss - np.cumsum(D * (sorted_labels * sign)))
         min_loss_idx = np.argmin(losses)
-        return thresholds[min_loss_idx], losses[min_loss_idx]
+
+        if min_loss_idx == 0:
+            final_threshold = -np.inf
+
+        elif min_loss_idx == values.shape[0]:
+            final_threshold = np.inf
+        else:
+            final_threshold = thresholds[min_loss_idx]
+
+        return final_threshold, losses[min_loss_idx]
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """

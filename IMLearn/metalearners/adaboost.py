@@ -60,13 +60,10 @@ class AdaBoost(BaseEstimator):
             y_pred = self.models_[i]._predict(X)
             wrong_labels = y_pred - y
             wrong_labels[wrong_labels != 0] = 1
-            err = np.dot(self.D_, wrong_labels)
+            err = np.sum(self.D_* wrong_labels)
             self.weights_[i] = 0.5 * np.log(1 / err - 1)
             self.D_ *= np.exp((-1)* y * self.weights_[i] * y_pred)
             self.D_ /= np.sum(self.D_)
-
-        return self.D_
-
 
     def _predict(self, X):
         """
