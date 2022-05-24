@@ -61,7 +61,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     qs1_fig = go.Figure()
 
     qs1_fig.update_layout(
-        title="Train and test errors of AdaBoost with noise = 0",
+        title=f"Train and test errors of AdaBoost with noise = {noise}",
         xaxis_title="Learners count",
         yaxis_title="Error"
     )
@@ -134,8 +134,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     qs4_fig = go.Figure()
 
     qs4_fig.add_traces(
-        [decision_surface(
-            qs4_predict, lims[0], lims[1], showscale=False),
+        [decision_surface(qs4_predict, lims[0], lims[1], showscale=False),
             go.Scatter(
                 x=train_X[:, 0],
                 y=train_X[:, 1],
