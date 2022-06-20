@@ -9,7 +9,10 @@ from IMLearn.learners.classifiers.logistic_regression import LogisticRegression
 from IMLearn.utils import split_train_test
 
 import plotly.graph_objects as go
+import plotly.io as pio
 
+pio.renderers.default = 'browser'
+pio.templates.default = "simple_white"
 
 def plot_descent_path(module: Type[BaseModule],
                       descent_path: np.ndarray,
@@ -73,25 +76,116 @@ def get_gd_state_recorder_callback() -> Tuple[Callable[[], None], List[np.ndarra
     weights: List[np.ndarray]
         Recorded parameters
     """
-    raise NotImplementedError()
+    values = []
+    weights = []
+
+    def callback(model, **kwargs):
+        values.append(kwargs["val"])
+        weights.append(kwargs["weights"])
+        return
+
+    return callback, values, weights
 
 
 def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
-                                 etas: Tuple[float] = (1, .1, .01, .001)):
-    raise NotImplementedError()
+                               etas: Tuple[float] = (1, .1, .01, .001)):
+
+    functions = {
+        "L1": L1,
+        "L2": L2
+    }
+
+    for f_name, f in functions.items():
+        for eta in etas:
+            init_weights = np.copy(init)
+            current_norm = f(init_weights)
+            callback, values, weights = get_gd_state_recorder_callback()
+
+            gd = GradientDescent(learning_rate=FixedLR(eta), callback=callback, out_type="best")
+            best = gd.fit(current_norm, None, None)
+
+            qs1_fig = plot_descent_path(module=f, descent_path=np.array(weights), title=f"for eta {eta} and norm {f_name}")
+            qs1_fig.show()
+
+            qs3_fig = go.Figure()
+            qs3_fig.update_layout(
+                title=f"Convergence rate for eta {eta} and norm {f_name}",
+                xaxis_title="Iteration number",
+                yaxis_title="Norm value",
+                title_x=0.5
+            )
+
+            iterations = [i for i in range(len(values))]
+            qs3_fig.add_trace(
+                go.Scatter(
+                    x=iterations,
+                    y=values,
+                    mode="markers",
+                    marker=dict(color="blue"),
+                    showlegend=False
+                )
+            )
+
+            qs3_fig.show()
+
+            print(f"Best loss of {f_name} for eta {eta} is {np.abs(0-f(best).compute_output())}")
 
 
 def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
                                     eta: float = .1,
                                     gammas: Tuple[float] = (.9, .95, .99, 1)):
-    # Optimize the L1 objective using different decay-rate values of the exponentially decaying learning rate
-    raise NotImplementedError()
+    qs5_fig = go.Figure()
+    qs5_fig.update_layout(
+        title=f"Convergence rate for L1 using exponential rate with different gamma values",
+        xaxis_title="Iteration number",
+        yaxis_title="Norm value",
+        title_x=0.5
+    )
 
-    # Plot algorithm's convergence for the different values of gamma
-    raise NotImplementedError()
+    for i, gamma in enumerate(gammas):
+        init_weights_L1 = np.copy(init)
+        current_norm_L1 = L1(init_weights_L1)
+        callback_L1, values, weights_L1 = get_gd_state_recorder_callback()
+        gd_1 = GradientDescent(learning_rate=ExponentialLR(eta, gamma), callback=callback_L1, out_type="best")
+        best = gd_1.fit(current_norm_L1, None, None)
+
+        if gamma == 0.95:
+            print(f"Best loss of L1 for eta {eta} and gamma 0.95 is {np.abs(0 - L1(best).compute_output())}")
+            init_weights_L2 = np.copy(init)
+            current_norm_L2 = L2(init_weights_L2)
+            callback_L2, values, weights_L2 = get_gd_state_recorder_callback()
+            gd_2 = GradientDescent(learning_rate=ExponentialLR(eta, gamma), callback=callback_L2, out_type="best")
+            gd_2.fit(current_norm_L2, None, None)
+
+            qs7_fig_1 = plot_descent_path(module=L1, descent_path=np.array(weights_L1), title=f"for L1 and gamma 0.95")
+            qs7_fig_1.show()
+
+            qs7_fig_2 = plot_descent_path(module=L2, descent_path=np.array(weights_L2), title=f"for L2 and gamma 0.95")
+            qs7_fig_2.show()
+
+        iterations = [i for i in range(len(values))]
+        qs5_fig.add_trace(
+            go.Scatter(
+                x=iterations,
+                y=values,
+                mode="markers",
+                name=f"Gamma: {gamma}",
+                showlegend=True,
+            )
+        )
+
+    qs5_fig.show()
+
+
+    qs6_fig = go.Figure()
+    qs6_fig.update_layout(
+        title=f"Convergence rate for L1 using exponential rate with different gamma values",
+        xaxis_title="Iteration number",
+        yaxis_title="Norm value",
+        title_x=0.5
+    )
 
     # Plot descent path for gamma=0.95
-    raise NotImplementedError()
 
 
 def load_data(path: str = "../datasets/SAheart.data", train_portion: float = .8) -> \
@@ -139,7 +233,8 @@ def fit_logistic_regression():
 
 
 if __name__ == '__main__':
+
     np.random.seed(0)
-    compare_fixed_learning_rates()
+    #compare_fixed_learning_rates()
     compare_exponential_decay_rates()
-    fit_logistic_regression()
+    #fit_logistic_regression()

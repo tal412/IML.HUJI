@@ -119,4 +119,56 @@ class GradientDescent:
                 Euclidean norm of w^(t)-w^(t-1)
 
         """
-        raise NotImplementedError()
+        weights = f.weights
+        best_weight = f.weights
+        best_output = None
+        iterations = 0
+        delta = np.inf
+
+        self.call_callback(f, f.compute_output(), f.compute_jacobian(X=X, y=y), iterations, delta)
+
+        while iterations < self.max_iter_ and delta > self.tol_:
+            previous_weight = f.weights
+            #previous_output = f.compute_output()
+            f.weights = f.weights - self.learning_rate_.lr_step(t=iterations) * f.compute_jacobian(X=X, y=y)
+
+            current_output, current_jacob =\
+                f.compute_output(), f.compute_jacobian(X=X, y=y)
+
+            if best_output is None or current_output <= best_output:
+                best_weight = f.weights
+                best_output = current_output
+
+            delta = np.sqrt(np.sum(np.power(f.weights - previous_weight, 2)))
+            weights += f.weights
+            iterations += 1
+
+            self.call_callback(f, current_output, current_jacob, iterations, delta)
+
+        if self.out_type_ == "last":
+            return f.weights
+        elif self.out_type_ == "best":
+            return best_weight
+        elif self.out_type_ == "average":
+            return weights/iterations
+
+    def call_callback(self, f, current_output, current_jacob, iterations, delta):
+        self.callback_(
+            model=f,
+            weights=f.weights,
+            val=current_output,
+            grad=current_jacob,
+            t=iterations,
+            eta=self.learning_rate_.lr_step(t=iterations),
+            delta=delta
+        )
+
+
+
+
+
+
+
+
+
+
