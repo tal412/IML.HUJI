@@ -129,7 +129,6 @@ class GradientDescent:
 
         while iterations < self.max_iter_ and delta > self.tol_:
             previous_weight = f.weights
-            #previous_output = f.compute_output()
             f.weights = f.weights - self.learning_rate_.lr_step(t=iterations) * f.compute_jacobian(X=X, y=y)
 
             current_output, current_jacob =\
