@@ -7,6 +7,8 @@ from IMLearn.desent_methods import GradientDescent, FixedLR, ExponentialLR
 from IMLearn.desent_methods.modules import L1, L2
 from IMLearn.learners.classifiers.logistic_regression import LogisticRegression
 from IMLearn.utils import split_train_test
+from IMLearn.metrics import misclassification_error
+from IMLearn.model_selection import cross_validate
 
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -176,7 +178,6 @@ def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.
 
     qs5_fig.show()
 
-
     qs6_fig = go.Figure()
     qs6_fig.update_layout(
         title=f"Convergence rate for L1 using exponential rate with different gamma values",
@@ -184,8 +185,6 @@ def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.
         yaxis_title="Norm value",
         title_x=0.5
     )
-
-    # Plot descent path for gamma=0.95
 
 
 def load_data(path: str = "../datasets/SAheart.data", train_portion: float = .8) -> \
@@ -224,6 +223,8 @@ def fit_logistic_regression():
     # Load and split SA Heard Disease dataset
     X_train, y_train, X_test, y_test = load_data()
 
+    # Q8 ----------------------------------------------------
+
     log_model = LogisticRegression(solver=GradientDescent(learning_rate=FixedLR(1e-4), max_iter=20000))
     log_model.fit(X_train.to_numpy(), y_train.to_numpy())
     prob_vec = log_model.predict_proba(X_train.to_numpy())
@@ -242,11 +243,117 @@ def fit_logistic_regression():
                          yaxis=dict(title=r"$\text{True Positive Rate (TPR)}$")))
     qs8_fig.show()
 
+    # Q9 ----------------------------------------------------
+
+    qs9_best_alpha = thresholds[np.argmax(tpr-fpr)]
+    print(f"Best alpha is {qs9_best_alpha}")
+
+    best_alpha_pred = prob_vec >= qs9_best_alpha
+    test_err = misclassification_error(y_train.to_numpy(), best_alpha_pred)
+    print(f"Test error using best alpha is: {test_err}")
+
+    # Q10 and Q11 ----------------------------------------------------
+
+    train_errs_l1 = []
+    val_errs_l1 = []
+    train_errs_l2 = []
+    val_errs_l2 = []
+
+    possible_lambdas = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1]
+    for lam in possible_lambdas:
+        l1_log_model = LogisticRegression(
+            solver=
+            GradientDescent(
+                learning_rate=FixedLR(1e-4),
+                max_iter=20000,
+            ),
+            penalty="l1",
+            alpha=0.5,
+            lam=lam
+        )
+
+        l2_log_model = LogisticRegression(
+            solver=
+            GradientDescent(
+                learning_rate=FixedLR(1e-4),
+                max_iter=20000,
+            ),
+            penalty="l2",
+            alpha=0.5,
+            lam=lam
+        )
+
+        train_err_l1, val_err_l1 = \
+            cross_validate(
+                l1_log_model,
+                X_train.to_numpy(),
+                y_train.to_numpy(),
+                misclassification_error
+            )
+        train_errs_l1.append(train_err_l1)
+        val_errs_l1.append(val_err_l1)
+
+        train_err_l2, val_err_l2 = \
+            cross_validate(
+                l2_log_model,
+                X_train.to_numpy(),
+                y_train.to_numpy(),
+                misclassification_error
+            )
+
+        train_errs_l2.append(train_err_l2)
+        val_errs_l2.append(val_err_l2)
+
+    min_err_l1 = np.min(val_errs_l1)
+    min_err_l2 = np.min(val_errs_l2)
+
+    best_lam_index_l1 = val_errs_l1.index(min_err_l1)
+    best_lam_l1 = possible_lambdas[best_lam_index_l1]
+
+    best_lam_index_l2 = val_errs_l2.index(min_err_l2)
+    best_lam_l2 = possible_lambdas[best_lam_index_l2]
+
+    best_l1_log_model = LogisticRegression(
+        solver=
+        GradientDescent(
+            learning_rate=FixedLR(1e-4),
+            max_iter=20000,
+        ),
+        penalty="l1",
+        alpha=0.5,
+        lam=best_lam_l1
+    )
+    best_l1_log_model.fit(X_train.to_numpy(), y_train.to_numpy())
+
+    best_l2_log_model = LogisticRegression(
+        solver=
+        GradientDescent(
+            learning_rate=FixedLR(1e-4),
+            max_iter=20000,
+        ),
+        penalty="l2",
+        alpha=0.5,
+        lam=best_lam_l2
+    )
+    best_l2_log_model.fit(X_train.to_numpy(), y_train.to_numpy())
+
+    test_err_l1 = misclassification_error(
+        y_test.to_numpy(),
+        best_l1_log_model.predict(X_test.to_numpy())
+    )
+
+    test_err_l2 = misclassification_error(
+        y_test.to_numpy(),
+        best_l2_log_model.predict(X_test.to_numpy())
+    )
+
+    print(f"Best lambda for l1 model is {best_lam_l1} and best test error is {np.round(test_err_l1,2)}")
+    print(f"Best lambda for l2 model is {best_lam_l2} and best test error is {np.round(test_err_l2,2)}")
 
 
 if __name__ == '__main__':
 
     np.random.seed(0)
-    #compare_fixed_learning_rates()
-    #compare_exponential_decay_rates()
+    compare_fixed_learning_rates()
+    compare_exponential_decay_rates()
     fit_logistic_regression()

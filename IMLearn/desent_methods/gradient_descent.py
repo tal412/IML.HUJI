@@ -125,14 +125,14 @@ class GradientDescent:
         iterations = 0
         delta = np.inf
 
-        self.call_callback(f, f.compute_output(), f.compute_jacobian(X=X, y=y), iterations, delta)
+        self.call_callback(f, f.compute_output(X=X, y=y), f.compute_jacobian(X=X, y=y), iterations, delta)
 
         while iterations < self.max_iter_ and delta > self.tol_:
             previous_weight = f.weights
             f.weights = f.weights - self.learning_rate_.lr_step(t=iterations) * f.compute_jacobian(X=X, y=y)
 
             current_output, current_jacob =\
-                f.compute_output(), f.compute_jacobian(X=X, y=y)
+                f.compute_output(X=X, y=y), f.compute_jacobian(X=X, y=y)
 
             if best_output is None or current_output <= best_output:
                 best_weight = f.weights
